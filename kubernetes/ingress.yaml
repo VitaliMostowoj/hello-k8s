@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hello-k8s
+  labels:
+    app.kubernetes.io/instance: hello-k8s
+    app.kubernetes.io/name: hello-k8s
+spec:
+  rules:
+    - host: hello-k8s.test.k8s-eu.p-f.biz
+      http:
+        paths:
+          - backend:
+              service:
+                name: hello-k8s
+                port:
+                  name: http
+            path: /
+            pathType: ImplementationSpecific
+  tls:
+    - hosts:
+        - hello-k8s.test.k8s-eu.p-f.biz
