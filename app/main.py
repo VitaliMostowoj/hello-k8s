@@ -15,13 +15,13 @@ PROMETHEUS_GAUGE.set(gauge)  # Initialize with the current counter value
 
 
 # curl -X 'POST' 'http://127.0.0.1:8000/set_counter?value=10'
-@app.post("/set_counter")
+@app.post("/set_gauge")
 async def set_counter(value: int):
-    global counter
-    counter = value
-    os.environ["COUNTER"] = str(counter)  # Update environment variable
-    PROMETHEUS_GAUGE.set(counter)  # Update Prometheus metric with new value
-    return {"message": "Counter updated", "counter": counter}
+    global gauge
+    gauge = value
+    os.environ["COUNTER"] = str(gauge)  # Update environment variable
+    PROMETHEUS_GAUGE.set(gauge)  # Update Prometheus metric with new value
+    return {"message": "Counter updated", "counter": gauge}
 
 
 @app.post("/set_livez")
