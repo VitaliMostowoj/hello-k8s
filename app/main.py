@@ -5,13 +5,38 @@ import os
 
 app = FastAPI()
 
-counter = int(os.getenv("COUNTER", 0))  # Get counter value from environment variable or default to 0
+livez = True
+readyz = True
 
-# Create a Prometheus Gauge metric to reflect the counter value
-PROMETHEUS_COUNTER = Gauge("app_counter", "Counter value from FastAPI app")
-PROMETHEUS_COUNTER.set(counter)  # Initialize with the current counter value
+gauge = int(os.getenv("COUNTER", 1))
 
-# Define a Prometheus Counter
+PROMETHEUS_GAUGE = Gauge("app_counter", "Counter value from FastAPI app")
+PROMETHEUS_GAUGE.set(gauge)  # Initialize with the current counter value
+
+
+# curl -X 'POST' 'http://127.0.0.1:8000/set_counter?value=10'
+@app.post("/set_counter")
+async def set_counter(value: int):
+    global counter
+    counter = value
+    os.environ["COUNTER"] = str(counter)  # Update environment variable
+    PROMETHEUS_GAUGE.set(counter)  # Update Prometheus metric with new value
+    return {"message": "Counter updated", "counter": counter}
+
+
+@app.post("/set_livez")
+async def set_livez(status: bool):
+    global livez
+    livez = status
+    return {"livez was set to": status}
+
+
+@app.post("/set_readyz")
+async def set_readyz(status: bool):
+    global readyz
+    readyz = status
+    return {"readyz was set to": status}
+
 
 @app.get("/")
 async def root():
@@ -20,18 +45,26 @@ async def root():
     pod_namespace = os.getenv("MY_POD_NAMESPACE", "unknown")
     pod_ip = os.getenv("MY_POD_IP", "unknown")
 
-    return {"node_name": node_name, "pod_name": pod_name, "pod_namespace": pod_namespace, "pod_ip": pod_ip, "error_couter": counter}
+    return {"node_name": node_name, "pod_name": pod_name, "pod_namespace": pod_namespace, "pod_ip": pod_ip,
+            "error_gauge": gauge}
 
-#curl -X 'POST' 'http://127.0.0.1:8000/set_counter?value=10'
-
-@app.post("/set_counter")
-def set_counter(value: int):
-    global counter
-    counter = value
-    os.environ["COUNTER"] = str(counter)  # Update environment variable
-    PROMETHEUS_COUNTER.set(counter)  # Update Prometheus metric with new value
-    return {"message": "Counter updated", "counter": counter}
 
 @app.get("/metrics")
-def metrics():
+async def metrics():
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+
+
+@app.get("/livez")
+async def livez():
+    if livez:
+        return Response(content="ok", media_type="text/plain", status_code=200)
+    else:
+        return Response(content="not ok", media_type="text/plain", status_code=500)
+
+
+@app.get("/readyz")
+async def readyz():
+    if readyz:
+        return Response(content="ok", media_type="text/plain", status_code=200)
+    else:
+        return Response(content="not ok", media_type="text/plain", status_code=500)
