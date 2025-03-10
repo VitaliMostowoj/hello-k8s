@@ -10,7 +10,7 @@ readyz = True
 
 gauge = int(os.getenv("COUNTER", 1))
 
-PROMETHEUS_GAUGE = Gauge("app_counter", "Counter value from FastAPI app")
+PROMETHEUS_GAUGE = Gauge("hello_k8s_error_gauge", "Counter value from FastAPI app")
 PROMETHEUS_GAUGE.set(gauge)  # Initialize with the current counter value
 
 
@@ -21,21 +21,24 @@ async def set_counter(value: int):
     gauge = value
     os.environ["COUNTER"] = str(gauge)  # Update environment variable
     PROMETHEUS_GAUGE.set(gauge)  # Update Prometheus metric with new value
-    return {"message": "Counter updated", "counter": gauge}
+    pod_name = os.getenv("MY_POD_NAME", "unknown")
+    return {"message": "Counter updated", "gauge": gauge, "on pod":pod_name}
 
 
 @app.post("/set_livez")
 async def set_livez(status: bool):
     global livez
     livez = status
-    return {"livez was set to": status}
+    pod_name = os.getenv("MY_POD_NAME", "unknown")
+    return {"livez was set to": status, "on pod": pod_name}
 
 
 @app.post("/set_readyz")
 async def set_readyz(status: bool):
     global readyz
     readyz = status
-    return {"readyz was set to": status}
+    pod_name = os.getenv("MY_POD_NAME", "unknown")
+    return {"readyz was set to": status, "on_pod":pod_name}
 
 
 @app.get("/")
